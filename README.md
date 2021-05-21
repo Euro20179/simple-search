@@ -16,6 +16,11 @@ chdmod +x simple-search
 sudo cp simple-search /usr/local/bin
 ```
 
+# dependencies
+* grep
+* sed
+* a webbrowser (the default is surf)
+
 # Config
 
 there are a few environment variables,

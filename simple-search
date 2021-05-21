@@ -2,38 +2,68 @@
 keep_history="${KEEP_SS_HISTORY:-1}"
 history_file="${SS_HISTORY:-$HOME/.cache/simple-search-hist.list}"
 browser="${SS_BROWSER:-surf}"
-search_engine="${SS_SEARCH_ENGINE:-https://duckduckgo.com/}"
-menu_command="${SS_MENU_COMMAND:-dmenu -p "Search: "}"
+search_engine="${SS_SEARCH_ENGINE:-https://duckduckgo.com/%search%}"
 
-while getopts "hx" opt; do
+parse_opt () {
+    opt="$1"
+    optarg="$2"
+    
     case "$opt" in
 	h)
 	    printf "%s" "
 USAGE
-    simple-search [-hx] [search]
+    simple-search [OPTIONS...] [search]
     
     use - for stdin
 
+    if the search starts with \"\\ss:\" it will run simple-search with those parameters (i use it for \ss:-x)
+
     -h            help
     -x            clear history
+    -b <browser>  the browser
+    -e <engine>   the search engine
 
 ENVIRONMENT VARIABLES
     KEEP_SS_HISTORY=<1|0>         1 keeps history, 0 does not
     SS_HISTORY=<path_to_file>     the path to the history file
     SS_BROWSER=<browser>          the browser to use (must support a url as argument)
     SS_SEARCH_ENGINE=<url>        in the url put %search% where the search should go
-    SS_MENU_COMMAND=<command>     command to use instead of 'dmenu -p \"Search:\"'
 "; exit ;;
-	x) : > "$history_file"; exit
+
+	x) : > "$history_file"; exit ;;
+
+	b) browser="$optarg" ;;
+
+	e) search_engine="$optarg" ;;
+
     esac
+    unset opt optarg
+}
+
+while getopts "hxb:e:" opt; do
+    parse_opt "$opt" "$OPTARG"
 done
+#remove the opts from the search
+shift $((OPTIND-1))
 
+#if the search is -, read from stdin
 [ "$*" = "-" ] && while read -r line; do search="$line"; done
-notify-send $search
 
-#checking -z search at the end in case it was read from stdin
-[ -z "$*" ] && search="$(echo "$(cat "$history_file")" | $menu_command)" || [ -z "$search" ] && search="$*"
+#if no search given, ask for search in dmenu
+[ -z "$*" ] && search="$(echo "$(cat "$history_file")" | dmenu -p "Search:")"
+#if search is empty set it to arguments
+[ -z "$search" ] && search="$*"
+#if it's still empty, no search was provided, exit as to not open the browser
 [ -z "$search" ] && exit
+
+#create history file if it doesn't exist
 [ ! -e "$history_file" ] && touch "$history_file"
-[ $keep_history -eq 1 ] && ! grep -q "^$search\$" "$history_file" && printf "%s\n" "$search" >> "$history_file"
-$browser "$(printf "%s" "$search_engine" | sed 's/%SEARCH%/'"$search"'')"
+
+#if keep history is on, and search is not in history, append it to history
+[ $keep_history -eq 1 ] && ! grep -q "^$search$" "$history_file" && printf "%s\n" "$search" >> "$history_file"
+
+#check if the search starts with \ss: if it does, remove it, and put it into simple-search, and exit
+printf "%s" "$search" | grep -qPo '^\\ss:' && printf "%s" "$search" | sed 's/^\\ss://' | xargs simple-search && exit
+
+#replace %search% in search engine with the search
+printf "%s" "$search_engine" | sed 's/%search%/'"$search"'/' | xargs $browser
