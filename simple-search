@@ -1,0 +1,4 @@
+history="~/.cache/simple-search-hist.list"
+search="$(echo "$(cat $history)" | dmenu -p "Search:")"
+printf "%s\n" "$search" >> "$history"
+surf "duckduckgo.com/$search"
