@@ -1,4 +1,39 @@
-history="~/.cache/simple-search-hist.list"
-search="$(echo "$(cat $history)" | dmenu -p "Search:")"
-printf "%s\n" "$search" >> "$history"
-surf "duckduckgo.com/$search"
+#!/bin/sh
+keep_history="${KEEP_SS_HISTORY:-1}"
+history_file="${SS_HISTORY:-$HOME/.cache/simple-search-hist.list}"
+browser="${SS_BROWSER:-surf}"
+search_engine="${SS_SEARCH_ENGINE:-https://duckduckgo.com/}"
+menu_command="${SS_MENU_COMMAND:-dmenu -p "Search: "}"
+
+while getopts "hx" opt; do
+    case "$opt" in
+	h)
+	    printf "
+USAGE
+    simple-search [-hx] [search]
+    
+    use - for stdin
+
+    -h            help
+    -x            clear history
+
+ENVIRONMENT VARIABLES
+    KEEP_SS_HISTORY=<1|0>         1 keeps history, 0 does not
+    SS_HISTORY=<path_to_file>     the path to the history file
+    SS_BROWSER=<browser>          the browser to use (must support a url as argument)
+    SS_SEARCH_ENGINE=<url>        in the url put %search% where the search should go
+    SS_MENU_COMMAND=<command>     command to use instead of 'dmenu -p \"Search:\"'
+"; exit ;;
+	x) : > "$history_file"; exit
+    esac
+done
+
+[ "$*" = "-" ] && while read -r line; do search="$line"; done
+notify-send $search
+
+#checking -z search at the end in case it was read from stdin
+[ -z "$*" ] && search="$(echo "$(cat "$history_file")" | $menu_command)" || [ -z "$search" ] && search="$*"
+[ -z "$search" ] && exit
+[ ! -e "$history_file" ] && touch "$history_file"
+[ $keep_history -eq 1 ] && ! grep -q "^$search\$" "$history_file" && printf "%s\n" "$search" >> "$history_file"
+$browser "${search_engine}${search}"
