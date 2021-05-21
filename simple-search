@@ -2,7 +2,7 @@
 keep_history="${KEEP_SS_HISTORY:-1}"
 history_file="${SS_HISTORY:-$HOME/.cache/simple-search-hist.list}"
 browser="${SS_BROWSER:-surf}"
-search_engine="${SS_SEARCH_ENGINE:-https://duckduckgo.com/%search%}"
+search_engine="${SS_SEARCH_ENGINE:-https://duckduckgo.com/?q=%search%}"
 
 parse_opt () {
     opt="$1"
@@ -66,4 +66,4 @@ shift $((OPTIND-1))
 printf "%s" "$search" | grep -qPo '^\\ss:' && printf "%s" "$search" | sed 's/^\\ss://' | xargs simple-search && exit
 
 #replace %search% in search engine with the search
-printf "%s" "$search_engine" | sed 's/%search%/'"$search"'/' | xargs $browser
+$browser "$(printf "%s" "$search_engine" | sed 's/%search%/'"$search"'/')"
