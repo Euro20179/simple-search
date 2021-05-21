@@ -3,6 +3,11 @@ Simple search is a program that prompts you for a search, then opens the webbrow
 
 this is a program I made for myself so i can press super+s and a dmenu window pops up so i can search very very easily
 
+here is a very *very* basic one line implementation of this
+```sh
+surf "duckduckgo.com$(echo "" | dmenu -p "Search:")"
+```
+
 # Usage
 
 `simple-search <search>`
