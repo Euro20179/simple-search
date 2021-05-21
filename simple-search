@@ -8,7 +8,7 @@ menu_command="${SS_MENU_COMMAND:-dmenu -p "Search: "}"
 while getopts "hx" opt; do
     case "$opt" in
 	h)
-	    printf "
+	    printf "%s" "
 USAGE
     simple-search [-hx] [search]
     
@@ -36,4 +36,4 @@ notify-send $search
 [ -z "$search" ] && exit
 [ ! -e "$history_file" ] && touch "$history_file"
 [ $keep_history -eq 1 ] && ! grep -q "^$search\$" "$history_file" && printf "%s\n" "$search" >> "$history_file"
-$browser "${search_engine}${search}"
+$browser "$(printf "%s" "$search_engine" | sed 's/%SEARCH%/'"$search"'')"
