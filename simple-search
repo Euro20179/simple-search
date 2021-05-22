@@ -30,7 +30,7 @@ ENVIRONMENT VARIABLES
     SS_SEARCH_ENGINE=<url>        in the url put %search% where the search should go
 "; exit ;;
 
-	x) : > "$history_file"; exit ;;
+	x) : > "$history_file" ;;
 
 	b) browser="$optarg" ;;
 
@@ -64,6 +64,9 @@ shift $((OPTIND-1))
 
 #check if the search starts with \ss: if it does, remove it, and put it into simple-search, and exit
 printf "%s" "$search" | grep -qPo '^\\ss:' && printf "%s" "$search" | sed 's/^\\ss://' | xargs simple-search && exit
+
+#encode / to %2F
+search="$(printf "%s" "$search" | sed 's/\//%2F/g')"
 
 #replace %search% in search engine with the search
 printf "%s" "$search_engine" | sed 's/%search%/'"$search"'/' | xargs -0 $browser
